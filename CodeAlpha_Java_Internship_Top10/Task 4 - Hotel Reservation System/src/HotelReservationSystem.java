@@ -1,0 +1,20 @@
+import javax.swing.*;import java.awt.*;import java.time.*;import java.util.*;import java.io.*;
+public class HotelReservationSystem extends JFrame{
+ ArrayList<Room> rooms=new ArrayList<>();ArrayList<Reservation> bookings=new ArrayList<>();DefaultListModel<String> model=new DefaultListModel<>();JList<String> list=new JList<>(model);
+ JTextField guest=UI.input("Guest name"),room=UI.input("Room no"),checkIn=UI.input("YYYY-MM-DD"),checkOut=UI.input("YYYY-MM-DD");int nextId=1;
+ public HotelReservationSystem(){setTitle("CodeAlpha • Hotel Reservation System");setSize(950,620);setLocationRelativeTo(null);UI.style(this);
+  rooms.add(new Room("101","Standard",2500));rooms.add(new Room("102","Standard",2500));rooms.add(new Room("201","Deluxe",4500));rooms.add(new Room("202","Deluxe",4500));rooms.add(new Room("301","Suite",8000));
+  JPanel head=UI.card();head.setLayout(new BorderLayout());head.add(UI.title("HOTEL RESERVATION SYSTEM"),BorderLayout.WEST);head.add(UI.muted("Search • Book • Pay • Cancel"),BorderLayout.EAST);
+  JPanel form=UI.card();JButton book=UI.button("Book & Pay"),cancel=UI.button("Cancel Selected"),details=UI.button("Booking Details");form.add(guest);form.add(room);form.add(checkIn);form.add(checkOut);form.add(book);form.add(cancel);form.add(details);
+  book.addActionListener(e->book());cancel.addActionListener(e->cancel());details.addActionListener(e->details());
+  setLayout(new BorderLayout(14,14));add(head,BorderLayout.NORTH);add(new JScrollPane(list),BorderLayout.CENTER);add(form,BorderLayout.SOUTH);load();refresh();
+ }
+ void refresh(){model.clear();for(Room r:rooms)model.addElement(String.format("ROOM %-4s | %-8s | ₹%-6.0f/night | %s",r.number,r.category,r.price,r.available?"AVAILABLE":"BOOKED"));}
+ Room find(String n){for(Room r:rooms)if(r.number.equals(n))return r;return null;}
+ void book(){try{Room r=find(room.getText().trim());if(r==null||!r.available)throw new Exception("Room unavailable.");String g=guest.getText().trim();if(g.isEmpty())throw new Exception("Enter guest name.");LocalDate a=LocalDate.parse(checkIn.getText().trim()),b=LocalDate.parse(checkOut.getText().trim());if(!b.isAfter(a))throw new Exception("Check-out must be after check-in.");long nights=java.time.temporal.ChronoUnit.DAYS.between(a,b);Reservation x=new Reservation(nextId++,g,r.number,r.category,a,b,r.price*nights);bookings.add(x);r.available=false;save();refresh();UI.msg(this,"Booking confirmed!\nID: "+x.id+"\nGuest: "+g+"\nAmount: ₹"+x.amount+"\nPayment: "+x.payment);}catch(Exception e){JOptionPane.showMessageDialog(this,e.getMessage()+"\nUse dates like 2026-09-20.","Booking Error",0);}}
+ void cancel(){int i=list.getSelectedIndex();if(i<0){UI.msg(this,"Select a room/booking first.");return;}String s=model.get(i);String num=s.substring(5,9).trim();for(Reservation x:bookings)if(x.room.equals(num)&&x.status.equals("CONFIRMED")){x.status="CANCELLED";Room r=find(num);if(r!=null)r.available=true;save();refresh();UI.msg(this,"Reservation #"+x.id+" cancelled.");return;}UI.msg(this,"No active reservation found for that room.");}
+ void details(){if(bookings.isEmpty()){UI.msg(this,"No bookings.");return;}StringBuilder b=new StringBuilder();for(Reservation x:bookings)b.append("#").append(x.id).append(" | ").append(x.guest).append(" | Room ").append(x.room).append(" | ").append(x.in).append(" → ").append(x.out).append(" | ₹").append(x.amount).append(" | ").append(x.status).append("\n");UI.msg(this,b.toString());}
+ void save(){try(ObjectOutputStream o=new ObjectOutputStream(new FileOutputStream("hotel.dat"))){o.writeObject(bookings);}catch(Exception ignored){}}
+ void load(){try(ObjectInputStream o=new ObjectInputStream(new FileInputStream("hotel.dat"))){bookings=(ArrayList<Reservation>)o.readObject();for(Reservation x:bookings){nextId=Math.max(nextId,x.id+1);if(x.status.equals("CONFIRMED")){Room r=find(x.room);if(r!=null)r.available=false;}}}catch(Exception ignored){}}
+ public static void main(String[]a){SwingUtilities.invokeLater(()->new HotelReservationSystem().setVisible(true));}
+}

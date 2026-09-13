@@ -1,0 +1,1 @@
+public class Main {public static void main(String[] a){HotelReservationSystem.main(a);}}
