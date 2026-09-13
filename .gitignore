@@ -1,0 +1,16 @@
+# Java
+*.class
+out/
+bin/
+
+# Runtime data
+*.dat
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
